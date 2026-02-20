@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NBRO - Redirecting to App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .manual-link {
+            margin-top: 20px;
+            display: none;
+        }
+        .manual-link a {
+            color: #ffd700;
+            text-decoration: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>NBRO Field Surveyor</h1>
+        <div class="spinner"></div>
+        <p id="status">Redirecting to the app...</p>
+        <div class="manual-link" id="manualLink">
+            <p>If the app doesn't open automatically:</p>
+            <a href="#" id="deepLink">Click here to open the app</a>
+            <p style="margin-top: 20px; font-size: 0.9em;">
+                Or open the NBRO app manually and log in.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function redirectToApp() {
+            try {
+                // Get the hash fragment with auth tokens
+                const hash = window.location.hash.substring(1); // Remove the #
+                
+                if (hash) {
+                    // Parse the hash parameters
+                    const params = new URLSearchParams(hash);
+                    const accessToken = params.get('access_token');
+                    const refreshToken = params.get('refresh_token');
+                    const tokenType = params.get('token_type');
+                    const expiresIn = params.get('expires_in');
+                    const type = params.get('type');
+                    
+                    console.log('Auth tokens received:', { accessToken: !!accessToken, type });
+                    
+                    // Construct deep link with auth tokens
+                    const deepLink = `com.example.nbro_mobile_application://auth-callback#${hash}`;
+                    
+                    document.getElementById('deepLink').href = deepLink;
+                    
+                    // Try to open the app
+                    window.location.href = deepLink;
+                    
+                    // Show manual link after 2 seconds
+                    setTimeout(() => {
+                        document.getElementById('status').textContent = 
+                            'Waiting for app to open...';
+                        document.getElementById('manualLink').style.display = 'block';
+                    }, 2000);
+                    
+                    // Show fallback message after 5 seconds
+                    setTimeout(() => {
+                        document.getElementById('status').textContent = 
+                            'Unable to open app automatically';
+                    }, 5000);
+                } else {
+                    document.getElementById('status').textContent = 
+                        'No authentication data received. Please try again.';
+                    console.error('No hash fragment found in URL');
+                }
+            } catch (error) {
+                console.error('Redirect error:', error);
+                document.getElementById('status').textContent = 
+                    'An error occurred. Please open the app manually.';
+                document.getElementById('manualLink').style.display = 'block';
+            }
+        }
+        
+        // Run redirect on page load
+        window.addEventListener('load', redirectToApp);
+    </script>
+</body>
+</html>
