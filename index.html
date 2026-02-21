@@ -78,7 +78,7 @@
                     console.log('Auth tokens received:', { accessToken: !!accessToken, type });
                     
                     // Construct deep link with auth tokens
-                    const deepLink = `com.example.nbro_mobile_application://auth-callback#${hash}`;
+                    const deepLink = `nbroapp://auth-callback#${hash}`;
                     
                     document.getElementById('deepLink').href = deepLink;
                     
