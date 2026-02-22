@@ -50,7 +50,7 @@
     <div class="container">
         <h1>NBRO Field Surveyor</h1>
         <div class="spinner" id="spinner"></div>
-        <p id="status">Validating invitation...</p>
+        <p id="status">Validating authentication...</p>
 
         <div id="inviteForm" style="display:none; margin-top: 16px; text-align: left;">
             <p style="margin: 0 0 10px 0;"><strong>Email</strong></p>
@@ -160,22 +160,37 @@
                     refreshToken = params.get('refresh_token') || '';
                     const type = params.get('type') || '';
                     
-                    if (!accessToken || !refreshToken) {
-                        throw new Error('Missing auth tokens in callback URL');
+                    if (!accessToken) {
+                        throw new Error('Missing access token in callback URL');
                     }
 
                     const payload = decodeJwtPayload(accessToken);
-                    const email = payload?.email || 'Invited officer';
+                    const email = payload?.email || 'User';
 
-                    if (type && type !== 'invite' && type !== 'recovery') {
-                        console.warn('Unexpected auth type:', type);
+                    // Handle password recovery - redirect directly to app
+                    if (type === 'recovery') {
+                        document.getElementById('spinner').style.display = 'none';
+                        document.getElementById('status').textContent = 'Password reset verified. Opening app...';
+                        setTimeout(openApp, 1000);
+                        return;
                     }
-                    
-                    document.getElementById('spinner').style.display = 'none';
-                    document.getElementById('status').textContent = 'Invitation verified. Set your password to continue.';
-                    document.getElementById('emailText').textContent = email;
-                    document.getElementById('inviteForm').style.display = 'block';
-                    document.getElementById('setPasswordBtn').addEventListener('click', setPasswordAndOpenApp);
+
+                    // Handle officer invitation - show password setup form
+                    if (type === 'invite') {
+                        if (!refreshToken) {
+                            throw new Error('Missing refresh token for invitation');
+                        }
+                        document.getElementById('spinner').style.display = 'none';
+                        document.getElementById('status').textContent = 'Invitation verified. Set your password to continue.';
+                        document.getElementById('emailText').textContent = email;
+                        document.getElementById('inviteForm').style.display = 'block';
+                        document.getElementById('setPasswordBtn').addEventListener('click', setPasswordAndOpenApp);
+                        return;
+                    }
+
+                    // Unknown type
+                    console.warn('Unexpected auth type:', type);
+                    throw new Error('Invalid authentication type');
                 } else {
                     document.getElementById('status').textContent = 
                         'No authentication data received. Please try again.';
@@ -184,7 +199,7 @@
             } catch (error) {
                 console.error('Redirect error:', error);
                 document.getElementById('status').textContent = 
-                    'An error occurred. Please request a new invitation link.';
+                    'An error occurred. Please try again or request a new link.';
                 document.getElementById('manualLink').style.display = 'block';
             }
         }
