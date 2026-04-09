@@ -294,8 +294,25 @@
                 }
                 
                 if (code) {
-                    console.log('Password reset code detected, forwarding to app for PKCE exchange...');
-                    forwardPkceCodeToApp(code, queryType);
+                    const normalizedQueryType = normalizeAuthType(queryType);
+
+                    if (normalizedQueryType === 'recovery') {
+                        console.log('Password reset code detected, forwarding to app for PKCE exchange...');
+                        forwardPkceCodeToApp(code, queryType);
+                        return;
+                    }
+
+                    // Invitation/signup links should stay on this page.
+                    // If Supabase sends only `code` (without token_hash/tokens), we cannot verify invite in-browser.
+                    // Keep user on page and show what needs to be adjusted in email template.
+                    authQuery = new URLSearchParams({
+                        code: code,
+                        type: queryType || 'invite',
+                    }).toString();
+                    document.getElementById('deepLink').href = `nbroapp://auth-callback?${authQuery}`;
+                    document.getElementById('spinner').style.display = 'none';
+                    statusEl.textContent = 'Invitation link received, but this link format cannot be completed on web. Please ask admin to use invite link with token_hash, or open this link from the mobile app.';
+                    document.getElementById('manualLink').style.display = 'block';
                     return;
                 }
 
